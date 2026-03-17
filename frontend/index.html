@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Savor | Meal Prep & Recipes</title>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap"
+    rel="stylesheet" />
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css?v=12" />
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+
+
+<body>
+  <header>
+    <div class="logo">Savor</div>
+    <nav>
+      <ul>
+        <li>
+          <a href="#" id="link-view-recipes" class="active" onclick="switchView('recipes')">Browse Recipes</a>
+        </li>
+        <li>
+          <a href="#" id="link-view-drinks" onclick="switchView('drinks')">Browse Drinks</a>
+        </li>
+        <li>
+          <a href="#" id="link-view-pantry" onclick="switchView('pantry')">Pantry Chef 🤖</a>
+        </li>
+        <li>
+          <a href="#" id="link-view-planner" onclick="switchView('planner')">Meal Planner</a>
+        </li>
+        <li>
+          <a href="#" id="link-view-shopping" onclick="switchView('shopping')">Shopping List</a>
+        </li>
+      </ul>
+    </nav>
+    <div id="user-profile-section" style="display: flex; align-items: center; gap: 1rem;">
+      <div id="g_id_onload"
+         data-client_id="274294170664-jps2spqi1lqbs928s9hbqtp89b1csmpg.apps.googleusercontent.com"
+         data-context="signin"
+         data-ux_mode="popup"
+         data-callback="handleCredentialResponse"
+         data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin" data-type="standard"></div>
+      
+      <!-- Logged in state (hidden by default) -->
+      <div id="user-info" class="hidden" style="display: flex; align-items: center; gap: 10px;">
+          <img id="user-avatar" src="" alt="User" style="width: 35px; height: 35px; border-radius: 50%;">
+          <span id="user-name" style="font-weight: 500; font-size: 0.9rem;"></span>
+          <button id="logout-btn" class="btn btn-outline" style="padding: 0.3rem 0.8rem; font-size: 0.8rem;">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="app-content">
+    <!-- Views will be injected here by JS -->
+
+    <!-- RECIPES VIEW (Initial) -->
+    <section id="view-recipes" class="fade-in">
+      <div style="text-align: center; margin-bottom: 3rem;">
+        <h1 style="font-size: 3.5rem; color: var(--primary-color); margin-bottom: 1rem;">Savor Every Bite.</h1>
+        <p style="font-size: 1.2rem; color: var(--text-muted);">Discover hundreds of recipes for your daily meal
+          planning.</p>
+      </div>
+
+      <!-- AI Promo Banner -->
+      <div onclick="switchView('pantry')" style="cursor: pointer; background: linear-gradient(135deg, #e9f5db, #d8f3dc); border: 2px solid var(--primary-color); border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; text-align: center; box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
+          <h3 style="color: var(--primary-color); font-size: 1.3rem; margin-bottom: 0.5rem;">✨ Try our new AI Pantry Chef!</h3>
+          <p style="color: var(--text-main); font-size: 1rem; margin: 0;">Tell us what ingredients you have, and our AI will create a custom recipe just for you. <strong>Click here to try it!</strong></p>
+      </div>
+
+      <div class="filters-bar">
+        <input type="text" id="search-input" placeholder="Search for 'Chicken', 'Pasta', 'Cake'...">
+
+
+        <button class="btn btn-primary" id="search-btn">Find Recipes</button>
+      </div>
+
+      <!-- Category Scroll Filter -->
+      <div id="category-scroll-container" class="fade-in">
+        <!-- Categories injected by JS -->
+      </div>
+
+      <div id="recipe-list" class="recipe-grid">
+        <!-- Recipes loading... -->
+      </div>
+    </section>
+
+    <!-- DRINKS VIEW -->
+    <section id="view-drinks" class="hidden fade-in">
+      <div style="text-align: center; margin-bottom: 3rem;">
+        <h1 style="font-size: 3.5rem; color: var(--primary-color); margin-bottom: 1rem;">Sip Every Moment.</h1>
+        <p style="font-size: 1.2rem; color: var(--text-muted);">Explore cocktails and drinks for any occasion.</p>
+      </div>
+
+      <!-- AI Promo Banner -->
+      <div onclick="switchView('pantry')" style="cursor: pointer; background: linear-gradient(135deg, #e9f5db, #d8f3dc); border: 2px solid var(--primary-color); border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; text-align: center; box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
+          <h3 style="color: var(--primary-color); font-size: 1.3rem; margin-bottom: 0.5rem;">✨ Want an AI custom drink recipe?</h3>
+          <p style="color: var(--text-main); font-size: 1rem; margin: 0;">Use our AI Pantry Chef to create a unique cocktail from whatever you have in your kitchen right now! <strong>Click here to start!</strong></p>
+      </div>
+
+      <div class="filters-bar">
+        <input type="text" id="drink-search-input" placeholder="Search for 'Margarita', 'Mojito'...">
+        <button class="btn btn-primary" id="drink-search-btn">Find Drinks</button>
+      </div>
+
+      <div id="drink-category-scroll-container" class="fade-in">
+        <!-- Drink Categories injected by JS -->
+      </div>
+
+      <div id="drink-list" class="recipe-grid">
+        <!-- Drinks loading... -->
+      </div>
+    </section>
+
+    <!-- MEAL PLANNER VIEW -->
+    <section id="view-planner" class="hidden fade-in">
+      <h2 class="section-title">Weekly Planner</h2>
+      <div class="controls" style="margin-bottom: 20px">
+        <button class="btn btn-outline" id="prev-week">« Previous</button>
+        <span id="current-week-label" style="margin: 0 15px; font-weight: 600">Dec 10 - Dec 16</span>
+        <button class="btn btn-outline" id="next-week">Next »</button>
+      </div>
+      <div class="meal-plan-grid" id="planner-grid">
+        <!-- Grid generated by JS -->
+      </div>
+    </section>
+
+    <!-- SHOPPING LIST VIEW -->
+    <section id="view-shopping" class="hidden fade-in">
+      <h2 class="section-title">Your Grocery List</h2>
+      <div style="margin-bottom: 20px">
+        <p>Generated from your meal plan for the current week.</p>
+      </div>
+      <div class="shopping-list" id="shopping-list-container">
+        <!-- Items list -->
+      </div>
+    </section>
+
+    <!-- RECIPE DETAILS FULL PAGE -->
+    <section id="view-recipe-details" class="hidden fade-in">
+      <!-- Content injected by JS -->
+    </section>
+
+    <!-- DRINK DETAILS FULL PAGE -->
+    <section id="view-drink-details" class="hidden fade-in">
+      <!-- Content injected by JS -->
+    </section>
+
+    <!-- TAG RESULTS VIEW (New) -->
+    <section id="view-tag-results" class="hidden fade-in container">
+      <div style="margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between;">
+        <button class="btn btn-outline" onclick="history.back()">← Back</button>
+        <h1 id="tag-results-title" style="font-size: 2.5rem; color: var(--primary-color);">Results</h1>
+        <div style="width: 80px;"></div> <!-- Spacer for centering -->
+      </div>
+      <div id="tag-results-grid" class="recipe-grid">
+        <!-- Results go here -->
+      </div>
+    </section>
+
+    <!-- PANTRY CHEF VIEW -->
+    <section id="view-pantry" class="hidden fade-in container">
+      <div style="max-width: 800px; margin: 0 auto; text-align: center;">
+        <h1 class="section-title">Pantry Chef 🤖</h1>
+        <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 3rem;">
+          Tell us what ingredients you have, and our AI Chef will create a unique recipe for you!
+        </p>
+
+        <div class="pantry-tabs" style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem;">
+          <button id="tab-by-ingredients" class="btn btn-primary" style="padding: 0.8rem 2rem; border-radius: 20px;">By
+            Ingredients</button>
+          <button id="tab-by-name" class="btn btn-outline" style="padding: 0.8rem 2rem; border-radius: 20px;">By Recipe
+            Name</button>
+        </div>
+
+        <!-- Mode 1: By Ingredients -->
+        <div id="pantry-mode-ingredients" class="pantry-input-container"
+          style="background: white; padding: 2rem; border-radius: 20px; box-shadow: var(--shadow-lg);">
+          <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+            <input type="text" id="pantry-ingredient-input" placeholder="Enter an ingredient (e.g. Chicken, Rice)..."
+              style="flex: 1; padding: 1rem; border: 2px solid #eee; border-radius: 12px; font-size: 1rem;">
+            <button id="add-ingredient-btn" class="btn btn-primary" style="padding: 0 2rem;">Add</button>
+          </div>
+
+          <div id="pantry-tags-container"
+            style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; min-height: 50px;">
+            <!-- Tags go here -->
+          </div>
+
+          <button id="generate-recipe-btn" class="btn btn-primary"
+            style="width: 100%; padding: 1.2rem; font-size: 1.2rem; display: flex; justify-content: center; align-items: center; gap: 1rem;">
+            <span>✨ Generate from Ingredients</span>
+          </button>
+        </div>
+
+        <!-- Mode 2: By Name -->
+        <div id="pantry-mode-name" class="pantry-input-container hidden"
+          style="background: white; padding: 2rem; border-radius: 20px; box-shadow: var(--shadow-lg);">
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <input type="text" id="pantry-recipe-name-input" placeholder="Enter a dish name (e.g. Chicken Biryani)..."
+              style="width: 100%; padding: 1rem; border: 2px solid #eee; border-radius: 12px; font-size: 1rem;">
+
+            <button id="generate-by-name-btn" class="btn btn-primary"
+              style="width: 100%; padding: 1.2rem; font-size: 1.2rem; display: flex; justify-content: center; align-items: center; gap: 1rem;">
+              <span>✨ Generate specific Recipe</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="pantry-loading" class="hidden" style="margin-top: 3rem;">
+          <div class="spinner"></div>
+          <h3 style="margin-top: 1.5rem; color: var(--text-main);">The Chef is cooking...</h3>
+          <p style="color: var(--text-muted);">This usually takes about 10-15 seconds.</p>
+        </div>
+
+        <!-- AI History Section -->
+        <div id="ai-history-section" style="margin-top: 5rem; text-align: left;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid #eee; padding-bottom: 1rem;">
+            <h2 style="font-size: 2rem; color: var(--primary-color); margin: 0;">Your AI Creations</h2>
+            <button id="clear-history-btn" class="btn btn-outline" style="color: #d32f2f; border-color: #d32f2f;">Clear
+              History</button>
+          </div>
+          <div id="ai-history-grid" class="recipe-grid">
+            <!-- Cards injected by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Custom Confirmation Modal -->
+  <div id="confirmation-modal" class="modal hidden fade-in"
+    style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); justify-content: center; align-items: center;">
+    <div class="modal-content"
+      style="background-color: #fefefe; margin: auto; padding: 2rem; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 20px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+      <h2 id="modal-title" style="color: var(--primary-color); margin-bottom: 1rem;">Confirm Action</h2>
+      <p id="modal-message" style="margin-bottom: 2rem; color: #666; font-size: 1.1rem;">Are you sure you want to
+        proceed?</p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button id="modal-cancel-btn" class="btn btn-outline" style="min-width: 120px;">Cancel</button>
+        <button id="modal-confirm-btn" class="btn btn-primary" style="min-width: 120px;">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meal Selector Modal -->
+  <div id="meal-selector-modal" class="modal hidden fade-in"
+    style="display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
+    <div class="modal-content"
+      style="background-color: #fefefe; margin: auto; padding: 2rem; border-radius: 20px; width: 90%; max-width: 1000px; height: 80vh; display: flex; flex-direction: column; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; color: var(--primary-color);">Select a Slot</h2>
+        <button id="close-meal-selector-btn"
+          style="background:none; border:none; font-size: 2rem; cursor: pointer; color: #666;">&times;</button>
+      </div>
+
+      <div class="controls" style="margin-bottom: 20px; display: flex; justify-content: center; align-items: center;">
+        <button class="btn btn-outline" id="selector-prev-week">« Previous</button>
+        <span id="selector-week-label" style="margin: 0 15px; font-weight: 600">...</span>
+        <button class="btn btn-outline" id="selector-next-week">Next »</button>
+      </div>
+
+      <div class="meal-plan-grid" id="selector-grid" style="overflow-y: auto; flex: 1; padding: 5px; gap: 1rem;">
+        <!-- Grid generated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Savor AI Chat Interface -->
+  <!-- Floating Action Button -->
+  <button id="savor-ai-fab" class="hidden" title="Ask Savor AI">
+    🤖
+  </button>
+
+  <!-- Chat Modal -->
+  <div id="savor-ai-chat-modal" class="hidden">
+    <div class="chat-header">
+      <h3>🤖 Savor AI</h3>
+      <button id="close-chat-btn"
+        style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+    </div>
+    <div id="chat-history" class="chat-history">
+      <!-- Messages injected here -->
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="chat-input" placeholder="Ask about this recipe..." autocomplete="off">
+      <button id="send-chat-btn">➤</button>
+    </div>
+  </div>
+
+  <script src="js/api.js?v=7"></script>
+  <script src="js/app.js?v=11"></script>
+</body>
+
+</html>
