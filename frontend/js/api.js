@@ -1,4 +1,4 @@
-const API_BASE = 'http://127.0.0.1:5001/api';
+const API_BASE = 'https://recipe-app-t6ok.onrender.com/api';
 const EXTERNAL_API_BASE = 'https://www.themealdb.com/api/json/v1/1';
 const COCKTAIL_API_BASE = 'https://www.thecocktaildb.com/api/json/v1/1';
 
