@@ -21,9 +21,13 @@ window.handleCredentialResponse = async (response) => {
         const data = await res.json();
         
         if (res.ok && data.user) {
-            // Save token
-            localStorage.setItem('google_token', response.credential);
-            localStorage.setItem('user_info', JSON.stringify(data.user));
+            // Save token to session storage (cleared on browser close)
+            sessionStorage.setItem('google_token', response.credential);
+            sessionStorage.setItem('user_info', JSON.stringify(data.user));
+            
+            // Clean up old persistent storage if it exists
+            localStorage.removeItem('google_token');
+            localStorage.removeItem('user_info');
             
             updateLoginUI(data.user);
             showToast(`Welcome, ${data.user.name.split(' ')[0]}!`, 'success');
@@ -65,7 +69,9 @@ function updateLoginUI(user) {
 }
 
 function handleLogout() {
-    localStorage.removeItem('google_token');
+    sessionStorage.removeItem('google_token');
+    sessionStorage.removeItem('user_info');
+    localStorage.removeItem('google_token'); // Cleanup legacy
     localStorage.removeItem('user_info');
     updateLoginUI(null);
     showToast("Logged out successfully.", 'info');
@@ -77,13 +83,17 @@ function handleLogout() {
 }
 
 function checkStoredAuth() {
-    const storedStr = localStorage.getItem('user_info');
+    // First clear old localStorage to enforce new session rules
+    localStorage.removeItem('google_token');
+    localStorage.removeItem('user_info');
+
+    const storedStr = sessionStorage.getItem('user_info');
     if (storedStr) {
         try {
             const user = JSON.parse(storedStr);
             updateLoginUI(user);
         } catch (e) {
-            localStorage.removeItem('user_info');
+            sessionStorage.removeItem('user_info');
         }
     }
 }

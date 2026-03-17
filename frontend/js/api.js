@@ -3,7 +3,7 @@ const EXTERNAL_API_BASE = 'https://www.themealdb.com/api/json/v1/1';
 const COCKTAIL_API_BASE = 'https://www.thecocktaildb.com/api/json/v1/1';
 
 function getAuthHeader() {
-    const token = localStorage.getItem('google_token');
+    const token = sessionStorage.getItem('google_token');
     return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 window.getAuthHeader = getAuthHeader;
