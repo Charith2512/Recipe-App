@@ -1,5 +1,7 @@
 # Savor - Recipe & Meal Prep App
 
+🌐 **Live Production App:** [https://recipe-app-sigma-pied.vercel.app](https://recipe-app-sigma-pied.vercel.app)
+
 **Savor** is a comprehensive, AI-powered full-stack web application designed to help users discover culinary dishes, explore refreshing drinks, plan weekly meals, and automatically generate smart shopping lists.
 
 ## 🚀 Key Features
@@ -35,9 +37,10 @@
 
 ## 🛠 Tech Stack
 
-- **Frontend**: HTML5, Vanilla JavaScript (ES6+), and custom CSS3 (Variables, Grid, Glassmorphism).
-- **Backend**: Node.js and Express.js REST API.
-- **Database**: MySQL.
+- **Frontend**: HTML5, Vanilla JavaScript (ES6+), and custom CSS3 (Variables, Grid, Glassmorphism). Hosted on **Vercel**.
+- **Backend**: Node.js and Express.js REST API. Hosted on **Render**.
+- **Database**: **TiDB Cloud** (Serverless MySQL) securely integrated via Node `mysql2`.
+- **Authentication**: Google OAuth 2.0 Identity Services.
 - **AI Integration**: Google Generative AI (Gemini API) for Pantry Chef and Chat Assistant.
 
 ---
