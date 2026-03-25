@@ -4,6 +4,7 @@ const state = {
     currentWeekStart: new Date(), // Defaults to today/start of week
     recipesCache: [],
     pantryIngredients: [],
+    favourites: [],
     user: null // Will hold the logged in user info
 };
 
@@ -33,6 +34,7 @@ window.handleCredentialResponse = async (response) => {
             showToast(`Welcome, ${data.user.name.split(' ')[0]}!`, 'success');
             
             // Reload user specific data
+            state.favourites = await api.getFavourites();
             if (state.view === 'planner') loadPlanner();
             if (state.view === 'shopping') loadShoppingList();
             if (state.view === 'pantry') loadPantry();
@@ -82,7 +84,7 @@ function handleLogout() {
     }
 }
 
-function checkStoredAuth() {
+async function checkStoredAuth() {
     // First clear old localStorage to enforce new session rules
     localStorage.removeItem('google_token');
     localStorage.removeItem('user_info');
@@ -92,6 +94,7 @@ function checkStoredAuth() {
         try {
             const user = JSON.parse(storedStr);
             updateLoginUI(user);
+            state.favourites = await api.getFavourites();
         } catch (e) {
             sessionStorage.removeItem('user_info');
         }
@@ -188,7 +191,8 @@ const views = {
     recipeDetails: document.getElementById('view-recipe-details'),
     drinkDetails: document.getElementById('view-drink-details'),
     tagResults: document.getElementById('view-tag-results'),
-    pantry: document.getElementById('view-pantry')
+    pantry: document.getElementById('view-pantry'),
+    favourites: document.getElementById('view-favourites')
 };
 
 const navLinks = {
@@ -196,7 +200,8 @@ const navLinks = {
     drinks: document.getElementById('link-view-drinks'),
     planner: document.getElementById('link-view-planner'),
     shopping: document.getElementById('link-view-shopping'),
-    pantry: document.getElementById('link-view-pantry')
+    pantry: document.getElementById('link-view-pantry'),
+    favourites: document.getElementById('link-view-favourites')
 };
 
 // const modal = document.getElementById('recipe-details-modal');
@@ -376,9 +381,80 @@ function selectDrinkCategory(index) {
 
 
 
+
+window.toggleFavourite = async function(btnNode, id, type, title, image_url) {
+    if (!state.user) {
+        showToast("Please sign in to save favourites.", 'error');
+        return;
+    }
+    const isCurrentlyActive = btnNode.classList.contains('active');
+    btnNode.classList.toggle('active');
+    document.querySelectorAll('.fav-btn[data-id="'+id+'"]').forEach(el => {
+        el.classList.toggle('active', !isCurrentlyActive);
+    });
+
+    try {
+        if (isCurrentlyActive) {
+            state.favourites = state.favourites.filter(f => String(f.item_id) !== String(id));
+            await api.removeFavourite(id, type);
+            if (state.view === 'favourites') loadFavourites();
+        } else {
+            state.favourites.push({ item_id: id, item_type: type, title, image_url });
+            await api.addFavourite(id, type, title, image_url);
+        }
+    } catch (e) {
+        btnNode.classList.toggle('active');
+        document.querySelectorAll('.fav-btn[data-id="'+id+'"]').forEach(el => {
+            el.classList.toggle('active', isCurrentlyActive);
+        });
+        showToast("Failed to update favourite.", 'error');
+    }
+};
+
+async function loadFavourites() {
+    const list = document.getElementById('favourites-list');
+    if (!list) return;
+    
+    if (!state.user) {
+        list.innerHTML = '<div style="grid-column: 1/-1; text-align: center;">Please sign in to view your favourites.</div>';
+        return;
+    }
+
+    // Refresh from backend just in case
+    state.favourites = await api.getFavourites();
+    
+    if (state.favourites.length === 0) {
+        list.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem;">No favourites yet. Start browsing to add some!</div>';
+        return;
+    }
+
+    list.innerHTML = '';
+    state.favourites.forEach(f => {
+        const card = document.createElement('div');
+        card.className = 'card recipe-card fade-in';
+        card.onclick = () => f.item_type === 'drink' ? openDrink(f.item_id) : openRecipe(f.item_id);
+        
+        const safeTitle = (f.title || '').replace(/'/g, "\\'");
+        card.innerHTML = `
+            <button class="fav-btn active" data-id="${f.item_id}" onclick="event.stopPropagation(); toggleFavourite(event.currentTarget, '${f.item_id}', '${f.item_type}', '${safeTitle}', '${f.image_url}')">
+                <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            </button>
+            
+            <div class="card-img-container">
+                <img src="${f.image_url || 'https://placehold.co/600x400?text=No+Image'}" loading="lazy">
+            </div>
+            <div class="card-body">
+                <h3>${f.title || 'Unknown Item'}</h3>
+                <span class="badge" style="width:fit-content; margin-top:0.5rem;">${f.item_type === 'drink' ? 'Drink' : 'Recipe'}</span>
+            </div>
+        `;
+        list.appendChild(card);
+    });
+}
+
 function switchView(viewName, addToHistory = true, targetNavOverride = null) {
     // 1. Authentication Guard for Protected Views
-    const protectedViews = ['pantry', 'planner', 'shopping'];
+    const protectedViews = ['pantry', 'planner', 'shopping', 'favourites'];
     if (protectedViews.includes(viewName) && !state.user) {
         let featureName = viewName.charAt(0).toUpperCase() + viewName.slice(1);
         if (viewName === 'pantry') featureName = 'Pantry Chef AI';
@@ -427,6 +503,7 @@ function switchView(viewName, addToHistory = true, targetNavOverride = null) {
     if (viewName === 'planner') loadPlanner();
     if (viewName === 'shopping') loadShoppingList();
     if (viewName === 'pantry') loadPantry();
+    if (viewName === 'favourites') loadFavourites();
 }
 
 async function loadShoppingList() {
@@ -753,15 +830,24 @@ async function loadAIHistory() {
             }
 
             // Delete Button Overlay
-            const deleteBtnHtml = isHistoryEditMode ? `
+            const deleteBtnHtml = isHistoryEditMode ?  `
                 <button onclick="deleteSingleRecipe(event, '${r.id}')" 
                         style="position: absolute; top: 10px; right: 10px; background: #d32f2f; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; z-index: 10;">
                     ×
                 </button>
+            `  : '';
+            const isFav = state.favourites.some(f => String(f.item_id) === String(r.id) && f.item_type === 'recipe');
+            const safeTitle = (r.title || '').replace(/'/g, "\\'");
+            const favBtnHtml = (!isHistoryEditMode) ? `
+                <button class="fav-btn ${isFav ? 'active' : ''}" data-id="${r.id}" onclick="event.stopPropagation(); toggleFavourite(event.currentTarget, '${r.id}', 'recipe', '${safeTitle}', '${r.image_url}')">
+                    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                </button>
             ` : '';
+
 
             card.innerHTML = `
                 ${deleteBtnHtml}
+                ${favBtnHtml}
                 <div class="card-img-container" style="display: none;">
                     <img src="${r.image_url || 'https://placehold.co/600x400?text=AI+Chef'}" alt="${r.title}" loading="lazy">
                 </div>
@@ -926,8 +1012,17 @@ function renderRecipes(recipes) {
         card.className = 'card recipe-card fade-in';
         // Make whole card clickable
         card.onclick = () => openRecipe(r.idMeal);
+        const isFav = state.favourites.some(f => String(f.item_id) === String(r.idMeal) && f.item_type === 'recipe');
+        const safeTitle = (r.strMeal || '').replace(/'/g, "\\'");
+        const favBtnHtml = `
+            <button class="fav-btn ${isFav ? 'active' : ''}" data-id="${r.idMeal}" onclick="event.stopPropagation(); toggleFavourite(event.currentTarget, '${r.idMeal}', 'recipe', '${safeTitle}', '${r.strMealThumb}')">
+                <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            </button>
+        `;
 
         card.innerHTML = `
+            ${favBtnHtml}
+            
             <div class="card-img-container">
                 <img src="${r.strMealThumb}" alt="${r.strMeal}" loading="lazy">
             </div>
@@ -1020,8 +1115,17 @@ function renderDrinks(drinks) {
         card.className = 'card recipe-card fade-in'; // Reusing recipe card style
         // Make whole card clickable
         card.onclick = () => openDrink(d.idDrink);
+        const isFav = state.favourites.some(f => String(f.item_id) === String(d.idDrink) && f.item_type === 'drink');
+        const safeTitle = (d.strDrink || '').replace(/'/g, "\\'");
+        const favBtnHtml = `
+            <button class="fav-btn ${isFav ? 'active' : ''}" data-id="${d.idDrink}" onclick="event.stopPropagation(); toggleFavourite(event.currentTarget, '${d.idDrink}', 'drink', '${safeTitle}', '${d.strDrinkThumb}')">
+                <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            </button>
+        `;
 
         card.innerHTML = `
+            ${favBtnHtml}
+            
             <div class="card-img-container">
                 <img src="${d.strDrinkThumb}" alt="${d.strDrink}" loading="lazy">
             </div>
@@ -1086,7 +1190,12 @@ async function openDrink(id, addToHistory = true) {
 
         <div class="card" style="border:none; box-shadow:none; background:transparent;">
             <div class="modal-header" style="text-align: left; margin-bottom: 2rem;">
-                <h1 style="font-size: 3rem; margin-bottom: 0.5rem; color: var(--primary-color);">${drink.strDrink}</h1>
+                   <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+            <h1 style="font-size: 3rem; margin-bottom: 0.5rem; color: var(--primary-color);">${drink.strDrink}</h1>
+            <button class="fav-btn ${state.favourites.some(f => String(f.item_id) === String(drink.idDrink)) ? 'active' : ''}" data-id="${drink.idDrink}" style="position: relative; top: auto; right: auto; margin-left: 1rem; flex-shrink: 0;" onclick="toggleFavourite(event.currentTarget, '${drink.idDrink}', 'drink', '${drink.strDrink.replace(/'/g, "\\'")}', '${drink.strDrinkThumb}')">
+                <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            </button>
+        </div>
                 <div>
                     ${drink.strAlcoholic ? `<span class="badge clickable-tag" onclick="filterDrinksByAlcoholic('${drink.strAlcoholic}')">${drink.strAlcoholic}</span>` : ''}
                     
@@ -1230,9 +1339,14 @@ async function openRecipe(id, fromView = 'recipes', addToHistory = true) {
 
         <div class="card" style="border:none; box-shadow:none; background:transparent;">
             <div class="modal-header" style="text-align: left; margin-bottom: 2rem;">
-                <h1 style="font-size: 3rem; margin-bottom: 0.5rem; color: var(--primary-color);">
-                    ${recipe.strMeal}
-                </h1>
+                   <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+            <h1 style="font-size: 3rem; margin-bottom: 0.5rem; color: var(--primary-color);">
+                ${recipe.strMeal}
+            </h1>
+            <button class="fav-btn ${state.favourites.some(f => String(f.item_id) === String(recipe.idMeal)) ? 'active' : ''}" data-id="${recipe.idMeal}" style="position: relative; top: auto; right: auto; margin-left: 1rem; flex-shrink: 0;" onclick="toggleFavourite(event.currentTarget, '${recipe.idMeal}', 'recipe', '${recipe.strMeal.replace(/'/g, "\\'")}', '${recipe.strMealThumb}')">
+                <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            </button>
+        </div>
                 <div style="margin-top: 1rem;">
                    ${recipe.strCategory ?
             `<span class="badge clickable-tag" onclick="filterRecipesByCategoryName('${recipe.strCategory}')">${recipe.strCategory}</span>` :
@@ -1546,7 +1660,8 @@ async function confirmAddToMealPlan(date, type) {
         closeMealSelector();
         showToast(`Added ${title} to ${type} on ${date}`, 'success');
 
-        if (state.view === 'planner') loadPlanner();
+        state.favourites = await api.getFavourites();
+            if (state.view === 'planner') loadPlanner();
 
     } catch (e) {
         console.error(e);
@@ -1626,6 +1741,7 @@ function renderTagResults(title, items, type = 'recipe') {
         card.onclick = () => window[fn](id);
 
         card.innerHTML = `
+            
             <div class="card-img-container">
                 <img src="${img}" alt="${name}" loading="lazy">
             </div>

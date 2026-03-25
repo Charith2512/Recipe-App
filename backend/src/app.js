@@ -41,6 +41,7 @@ const shoppingListRoutes = require('../routes/shoppingList');
 const aiRoutes = require('../routes/ai');
 const drinkRoutes = require('../routes/drinks');
 const authRoutes = require('../routes/auth');
+const favouritesRoutes = require('../routes/favourites');
 
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/meal-plan', mealPlanRoutes);
@@ -48,6 +49,7 @@ app.use('/api/shopping-list', shoppingListRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/drinks', drinkRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/favourites', favouritesRoutes);
 
 // Catch-all for frontend (if using SPA router, though this is vanilla)
 app.get('*', (req, res, next) => {

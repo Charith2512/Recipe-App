@@ -38,6 +38,21 @@ async function updateSchema() {
             )
         `);
 
+        console.log("Checking favourites...");
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS favourites (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                item_id VARCHAR(255) NOT NULL,
+                item_type ENUM('recipe', 'drink') NOT NULL,
+                title VARCHAR(255),
+                image_url VARCHAR(500),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_user_item (user_id, item_id, item_type),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        `);
+
         console.log("Done updating schema!");
         connection.release();
         process.exit(0);

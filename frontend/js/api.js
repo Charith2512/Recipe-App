@@ -1,4 +1,4 @@
-const API_BASE = 'https://recipe-app-t6ok.onrender.com/api';
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5001/api' : 'https://recipe-app-t6ok.onrender.com/api';
 const EXTERNAL_API_BASE = 'https://www.themealdb.com/api/json/v1/1';
 const COCKTAIL_API_BASE = 'https://www.thecocktaildb.com/api/json/v1/1';
 
@@ -233,5 +233,34 @@ const api = {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to generate recipe');
         return data;
+    },
+
+    // --- Favourites ---
+    async getFavourites() {
+        const res = await fetch(`${API_BASE}/favourites`, {
+            headers: getAuthHeader()
+        });
+        if (!res.ok) return [];
+        return res.json();
+    },
+
+    async addFavourite(item_id, item_type, title = null, image_url = null) {
+        const res = await fetch(`${API_BASE}/favourites`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                ...getAuthHeader()
+            },
+            body: JSON.stringify({ item_id, item_type, title, image_url })
+        });
+        return res.json();
+    },
+
+    async removeFavourite(item_id, item_type) {
+        const res = await fetch(`${API_BASE}/favourites/${item_id}?type=${item_type}`, {
+            method: 'DELETE',
+            headers: getAuthHeader()
+        });
+        return res.json();
     }
 };
