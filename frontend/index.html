@@ -137,8 +137,13 @@
     <!-- SHOPPING LIST VIEW -->
     <section id="view-shopping" class="hidden fade-in">
       <h2 class="section-title">Your Grocery List</h2>
+      <div class="controls" style="margin-bottom: 20px">
+        <button class="btn btn-outline" id="shopping-prev-week">« Previous</button>
+        <span id="shopping-current-week-label" style="margin: 0 15px; font-weight: 600">...</span>
+        <button class="btn btn-outline" id="shopping-next-week">Next »</button>
+      </div>
       <div style="margin-bottom: 20px">
-        <p>Generated from your meal plan for the current week.</p>
+        <p>Generated from your meal plan for the selected week.</p>
       </div>
       <div class="shopping-list" id="shopping-list-container">
         <!-- Items list -->

@@ -243,6 +243,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('prev-week').addEventListener('click', () => changeWeek(-7));
     document.getElementById('next-week').addEventListener('click', () => changeWeek(7));
 
+    // Shopping List Listeners
+    const shopPrevBtn = document.getElementById('shopping-prev-week');
+    if (shopPrevBtn) shopPrevBtn.addEventListener('click', () => changeWeek(-7));
+    const shopNextBtn = document.getElementById('shopping-next-week');
+    if (shopNextBtn) shopNextBtn.addEventListener('click', () => changeWeek(7));
+
     // Meal Selector Logic Listeners
     const closeSelectorBtn = document.getElementById('close-meal-selector-btn');
     if (closeSelectorBtn) {
@@ -439,6 +445,11 @@ async function loadShoppingList() {
         const start = state.currentWeekStart || new Date();
         const end = new Date(start);
         end.setDate(end.getDate() + 6);
+
+        const label = document.getElementById('shopping-current-week-label');
+        if (label) {
+            label.innerText = `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+        }
 
         const pad = (n) => n < 10 ? '0' + n : n;
         const startStr = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
@@ -1281,7 +1292,14 @@ async function openRecipe(id, fromView = 'recipes', addToHistory = true) {
 // --- Meal Planner Logic ---
 function changeWeek(days) {
     state.currentWeekStart = addDays(state.currentWeekStart, days);
-    loadPlanner();
+    if (state.view === 'planner') {
+        loadPlanner();
+    } else if (state.view === 'shopping') {
+        loadShoppingList();
+    } else {
+        loadPlanner();
+        loadShoppingList();
+    }
 }
 
 // ... (Rest of planner/shopping logic) ...
