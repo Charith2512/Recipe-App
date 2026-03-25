@@ -1845,3 +1845,10 @@ switchView = function (viewName, addToHistory = true, targetNavOverride = null) 
 // Hook into openRecipe/openDrink to set context is already done by switchView logic?
 // No, we need to call setContext() explicitly after load.
 // We will modify openRecipe and openDrink to call savoryAI.setContext() at the end.
+
+// Wake up Render backend immediately on page load to reduce cold start delay
+window.addEventListener('load', () => {
+    if (typeof API_BASE !== 'undefined') {
+        fetch(`${API_BASE}/health`).catch(() => {});
+    }
+});

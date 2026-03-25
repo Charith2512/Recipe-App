@@ -33,6 +33,8 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '../../frontend')));
 
 // Routes
+app.get('/api/health', (req, res) => res.status(200).json({ status: 'awake' }));
+
 const recipeRoutes = require('../routes/recipes');
 const mealPlanRoutes = require('../routes/mealPlan');
 const shoppingListRoutes = require('../routes/shoppingList');
