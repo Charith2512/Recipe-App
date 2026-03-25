@@ -70,16 +70,27 @@ function updateLoginUI(user) {
     }
 }
 
-function handleLogout() {
+window.handleLogout = function handleLogout(isTimeout = false) {
     sessionStorage.removeItem('google_token');
     sessionStorage.removeItem('user_info');
     localStorage.removeItem('google_token'); // Cleanup legacy
     localStorage.removeItem('user_info');
     updateLoginUI(null);
-    showToast("Logged out successfully.", 'info');
+    
+    if (isTimeout === true) {
+        showCustomConfirm(
+            "Session Expired", 
+            "Your secure session has timed out. Please sign in again with Google to continue.", 
+            () => {}, 
+            "Okay", 
+            "primary"
+        );
+    } else {
+        showToast("Logged out successfully.", 'info');
+    }
     
     // Switch away from user data views
-    if (['planner', 'shopping', 'pantry'].includes(state.view)) {
+    if (['planner', 'shopping', 'pantry', 'favourites'].includes(state.view)) {
         switchView('recipes');
     }
 }
@@ -580,6 +591,7 @@ async function loadShoppingList() {
 
     } catch (err) {
         console.error("Error loading shopping list:", err);
+        if (err.message === 'SESSION_EXPIRED') return;
         listContainer.innerHTML = '<p style="text-align:center; color:#d32f2f;">Failed to load your shopping list.</p>';
     }
 }
@@ -1740,8 +1752,16 @@ function renderTagResults(title, items, type = 'recipe') {
 
         card.onclick = () => window[fn](id);
 
+        const isFav = state.favourites.some(f => String(f.item_id) === String(id) && f.item_type === type);
+        const safeTitle = (name || '').replace(/'/g, "\\'");
+        const favBtnHtml = `
+            <button class="fav-btn ${isFav ? 'active' : ''}" data-id="${id}" onclick="event.stopPropagation(); toggleFavourite(event.currentTarget, '${id}', '${type}', '${safeTitle}', '${img}')">
+                <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            </button>
+        `;
+
         card.innerHTML = `
-            
+            ${favBtnHtml}
             <div class="card-img-container">
                 <img src="${img}" alt="${name}" loading="lazy">
             </div>
@@ -1984,5 +2004,23 @@ switchView = function (viewName, addToHistory = true, targetNavOverride = null) 
 window.addEventListener('load', () => {
     if (typeof API_BASE !== 'undefined') {
         fetch(`${API_BASE}/health`).catch(() => {});
+    }
+});
+
+
+// --- Scroll to Top Logic ---
+document.addEventListener('DOMContentLoaded', () => {
+    const scrollBtn = document.getElementById('scrollToTopBtn');
+    if (scrollBtn) {
+        window.addEventListener('scroll', () => {
+            if (document.body.scrollTop > 400 || document.documentElement.scrollTop > 400) {
+                scrollBtn.style.display = "flex";
+            } else {
+                scrollBtn.style.display = "none";
+            }
+        });
+        scrollBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
     }
 });

@@ -8,6 +8,18 @@ function getAuthHeader() {
 }
 window.getAuthHeader = getAuthHeader;
 
+
+async function fetchWithAuth(url, options = {}) {
+    const res = await fetch(url, options);
+    if ((res.status === 401 || res.status === 403) && url.startsWith(API_BASE)) {
+        if (typeof window.handleLogout === 'function') {
+            window.handleLogout(true);
+        }
+        throw new Error('SESSION_EXPIRED');
+    }
+    return res;
+}
+
 const api = {
     // --- TheMealDB (Recipes) ---
     async getExternalRecipes(query = '') {
@@ -180,7 +192,7 @@ const api = {
     // --- Local Data (Meal Plans & Shopping List) ---
     async getLocalRecipes(filters = {}) {
         const query = new URLSearchParams(filters).toString();
-        const res = await fetch(`${API_BASE}/recipes?${query}`, {
+        const res = await fetchWithAuth(`${API_BASE}/recipes?${query}`, {
             headers: getAuthHeader()
         });
         return res.json();
@@ -188,14 +200,14 @@ const api = {
 
     async getRecipeDetails(id) {
         // Kept for backward compatibility or local recipes
-        const res = await fetch(`${API_BASE}/recipes/${id}`, {
+        const res = await fetchWithAuth(`${API_BASE}/recipes/${id}`, {
             headers: getAuthHeader()
         });
         return res.json();
     },
 
     async getMealPlan(start, end) {
-        const res = await fetch(`${API_BASE}/meal-plan?start_date=${start}&end_date=${end}`, {
+        const res = await fetchWithAuth(`${API_BASE}/meal-plan?start_date=${start}&end_date=${end}`, {
             headers: getAuthHeader()
         });
         return res.json();
@@ -203,7 +215,7 @@ const api = {
 
     async updateMealPlan(data) {
         // data: { date, meal_type, recipe_id }
-        const res = await fetch(`${API_BASE}/meal-plan`, {
+        const res = await fetchWithAuth(`${API_BASE}/meal-plan`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -215,14 +227,14 @@ const api = {
     },
 
     async getShoppingList(start, end) {
-        const res = await fetch(`${API_BASE}/shopping-list?start_date=${start}&end_date=${end}`, {
+        const res = await fetchWithAuth(`${API_BASE}/shopping-list?start_date=${start}&end_date=${end}`, {
             headers: getAuthHeader()
         });
         return res.json();
     },
 
     async generateRecipeByName(name) {
-        const res = await fetch(`${API_BASE}/ai/generate-by-name`, {
+        const res = await fetchWithAuth(`${API_BASE}/ai/generate-by-name`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -237,7 +249,7 @@ const api = {
 
     // --- Favourites ---
     async getFavourites() {
-        const res = await fetch(`${API_BASE}/favourites`, {
+        const res = await fetchWithAuth(`${API_BASE}/favourites`, {
             headers: getAuthHeader()
         });
         if (!res.ok) return [];
@@ -245,7 +257,7 @@ const api = {
     },
 
     async addFavourite(item_id, item_type, title = null, image_url = null) {
-        const res = await fetch(`${API_BASE}/favourites`, {
+        const res = await fetchWithAuth(`${API_BASE}/favourites`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -257,7 +269,7 @@ const api = {
     },
 
     async removeFavourite(item_id, item_type) {
-        const res = await fetch(`${API_BASE}/favourites/${item_id}?type=${item_type}`, {
+        const res = await fetchWithAuth(`${API_BASE}/favourites/${item_id}?type=${item_type}`, {
             method: 'DELETE',
             headers: getAuthHeader()
         });

@@ -765,3 +765,9 @@ main {
 }
 
 @import url('toast.css');
+
+/* Scroll to Top Button */
+#scrollToTopBtn:hover {
+    transform: translateY(-5px);
+    background-color: #245841;
+}
