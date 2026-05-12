@@ -362,43 +362,59 @@ router.post('/chat', async (req, res) => {
         }
 
         // 2. Construct Prompt
-        const systemInstruction = "You are 'Savor AI'. Answer user questions about recipes briefly and directly. Never include internal data, context echoes, or bullet points about your reasoning.";
+        const systemInstruction = `You are "Savor AI", a professional and friendly culinary assistant. 
+Your task is to answer the user's question about a specific recipe using the provided data.
 
-        const contextBlock = JSON.stringify({
-            recipe: recipeContext.title,
-            servings: recipeContext.servings,
-            prep_time: recipeContext.prep_time_minutes,
-            ingredients: recipeContext.ingredients,
-            instructions: recipeContext.instructions
-        }, null, 2);
+RULES:
+- Provide a direct and concise answer.
+- DO NOT repeat the recipe data, the question, or these rules.
+- DO NOT use bullet points for your reasoning.
+- DO NOT mention your persona or your constraints.
+- Response should be plain text and ready to display to the user.`;
+
+        const contextBlock = `RECIPE: ${recipeContext.title}
+INGREDIENTS: ${recipeContext.ingredients.join(', ')}
+INSTRUCTIONS: ${recipeContext.instructions.join(' ')}`;
 
         // 3. Call Gemini
         console.log("Savor AI: Generating content for:", recipeContext.title);
         const model = genAI.getGenerativeModel({ 
             model: "models/gemma-4-31b-it",
             systemInstruction: systemInstruction,
-            generationConfig: { temperature: 0.1 }
+            generationConfig: { 
+                temperature: 0.2,
+                topP: 0.8,
+                topK: 40
+            }
         });
 
-        // Use a very specific prompt to force a direct answer
-        const prompt = `RECIPE DATA:\n${contextBlock}\n\nUSER QUESTION: ${user_query}\n\nProvide a direct, friendly answer to the user question above. Do not repeat the data or question. Answer only:`;
+        const prompt = `RECIPE CONTEXT:
+${contextBlock}
+
+USER QUESTION: ${user_query}
+
+ANSWER:`;
         
         let text = await generateWithRetry(model, prompt);
 
-        // --- Post-processing to strip out "internal data" leaks ---
-        // If the model still echoes "User Query:", "Context:", etc., we strip them.
-        text = text.replace(/^\s*\*?\s*(User Query|Context|Data|Rule|Internal Data|RECIPE CONTEXT):[\s\S]*?(?=\w)/gi, '');
-        // Strip everything before the actual answer if it looks like a preamble
-        text = text.replace(/^Here is the answer:|^The answer is:|^Direct Answer:|^Response:/i, '').trim();
+        // --- Robust Post-processing ---
+        // Strip any potential leading labels or repeated instructions
+        text = text.replace(/^(ANSWER|RESPONSE|SAVOR AI|DIRECT ANSWER):/i, '').trim();
         
-        // Final fallback: if it still has too many bullet points at the start, try to find the actual sentence
-        if (text.includes('* User Query:') || text.includes('RECIPE CONTEXT:')) {
-             const lines = text.split('\n');
-             const actualAnswer = lines.find(l => l.trim() && !l.includes(':') && !l.startsWith('*'));
-             if (actualAnswer) text = actualAnswer;
+        // Remove common "thinking" markers if they leaked
+        text = text.replace(/^\s*\*.*?\*.*?\n/gm, ''); // Remove bulleted lines that look like constraints
+        text = text.replace(/User Question:.*?(\n|$)/gi, '');
+        text = text.replace(/Recipe Data:.*?(\n|$)/gi, '');
+        text = text.replace(/Persona:.*?(\n|$)/gi, '');
+        text = text.replace(/Constraints:.*?(\n|$)/gi, '');
+        
+        // If the model still returned a lot of garbage, take the last paragraph or the most sensible part
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('*') && !l.includes(':'));
+        if (lines.length > 0) {
+            text = lines.join(' ');
         }
 
-        res.json({ response: text, timestamp: new Date().toISOString() });
+        res.json({ response: text.trim(), timestamp: new Date().toISOString() });
 
     } catch (error) {
         console.error('Savor AI Error:', error);
