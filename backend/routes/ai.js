@@ -318,7 +318,7 @@ router.post('/chat', async (req, res) => {
     try {
         let recipeContext = context;
 
-        // 1. Data Lookup Strategy
+        // 1. Data Lookup — fetch the recipe from DB if we have an ID
         if (recipe_id) {
             const connection = await db.getConnection();
             try {
@@ -361,60 +361,70 @@ router.post('/chat', async (req, res) => {
             return res.status(404).json({ error: 'Recipe context could not be determined.' });
         }
 
-        // 2. Construct Prompt
-        const systemInstruction = `You are "Savor AI", a professional and friendly culinary assistant. 
-Your task is to answer the user's question about a specific recipe using the provided data.
+        // 2. Build recipe context
+        const recipeName = recipeContext.title;
+        const ingredientsList = Array.isArray(recipeContext.ingredients) 
+            ? recipeContext.ingredients.join(', ') 
+            : recipeContext.ingredients;
+        const instructionsList = Array.isArray(recipeContext.instructions)
+            ? recipeContext.instructions.join('. ')
+            : recipeContext.instructions;
 
-RULES:
-- Provide a direct and concise answer.
-- DO NOT repeat the recipe data, the question, or these rules.
-- DO NOT use bullet points for your reasoning.
-- DO NOT mention your persona or your constraints.
-- Response should be plain text and ready to display to the user.`;
-
-        const contextBlock = `RECIPE: ${recipeContext.title}
-INGREDIENTS: ${recipeContext.ingredients.join(', ')}
-INSTRUCTIONS: ${recipeContext.instructions.join(' ')}`;
-
-        // 3. Call Gemini
-        console.log("Savor AI: Generating content for:", recipeContext.title);
+        // 3. Use multi-turn chat so the recipe context is a SEPARATE turn from the question.
+        console.log("Savor AI Chat — Recipe:", recipeName, "| Question:", user_query);
         const model = genAI.getGenerativeModel({ 
             model: "models/gemma-4-31b-it",
-            systemInstruction: systemInstruction,
+            systemInstruction: "You are a helpful culinary assistant. You MUST wrap your final answer to the user in <ANSWER> and </ANSWER> tags. Provide ONLY the final answer inside those tags in 1-3 friendly sentences. Do not include your reasoning or options inside the tags.",
             generationConfig: { 
-                temperature: 0.2,
-                topP: 0.8,
-                topK: 40
+                temperature: 0.5,
+                topP: 0.95,
+                topK: 40,
+                maxOutputTokens: 512 // Increased to allow room for thinking + tags
             }
         });
 
-        const prompt = `RECIPE CONTEXT:
-${contextBlock}
+        // Turn 1: Give the AI the recipe (as prior conversation history)
+        // Turn 2: Ask the user's actual question
+        const chat = model.startChat({
+            history: [
+                {
+                    role: "user",
+                    parts: [{ text: `I'm making "${recipeName}". Here are the details:\n\nIngredients: ${ingredientsList}\n\nInstructions: ${instructionsList}` }],
+                },
+                {
+                    role: "model",
+                    parts: [{ text: `Got it! I can see you're making ${recipeName}. Feel free to ask me anything about this recipe.` }],
+                },
+            ],
+        });
 
-USER QUESTION: ${user_query}
+        const result = await chat.sendMessage(user_query);
+        const response = await result.response;
+        let text = response.text() || '';
 
-ANSWER:`;
-        
-        let text = await generateWithRetry(model, prompt);
+        console.log("Savor AI Chat — Raw response:", text);
 
-        // --- Robust Post-processing ---
-        // Strip any potential leading labels or repeated instructions
-        text = text.replace(/^(ANSWER|RESPONSE|SAVOR AI|DIRECT ANSWER):/i, '').trim();
+        // Extract everything inside <ANSWER>...</ANSWER>
+        // Use matchAll and take the LAST match in case the model discusses the tags in its preamble
+        let answerText = text;
+        const answerMatches = [...text.matchAll(/<ANSWER>([\s\S]*?)<\/ANSWER>/gi)];
         
-        // Remove common "thinking" markers if they leaked
-        text = text.replace(/^\s*\*.*?\*.*?\n/gm, ''); // Remove bulleted lines that look like constraints
-        text = text.replace(/User Question:.*?(\n|$)/gi, '');
-        text = text.replace(/Recipe Data:.*?(\n|$)/gi, '');
-        text = text.replace(/Persona:.*?(\n|$)/gi, '');
-        text = text.replace(/Constraints:.*?(\n|$)/gi, '');
-        
-        // If the model still returned a lot of garbage, take the last paragraph or the most sensible part
-        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('*') && !l.includes(':'));
-        if (lines.length > 0) {
-            text = lines.join(' ');
+        if (answerMatches && answerMatches.length > 0) {
+            answerText = answerMatches[answerMatches.length - 1][1].trim();
+        } else {
+            // Fallback: if it didn't use tags, try to take the very last paragraph
+            const paragraphs = text.split('\n\n').filter(p => p.trim().length > 0);
+            if (paragraphs.length > 0) {
+                answerText = paragraphs[paragraphs.length - 1].trim();
+                // Strip leading option markers if they leaked into the last paragraph
+                answerText = answerText.replace(/^Option\s*\d+:?\*?\s*/i, '');
+            }
         }
 
-        res.json({ response: text.trim(), timestamp: new Date().toISOString() });
+        answerText = answerText.trim();
+        console.log("Savor AI Chat — Final answer:", answerText);
+
+        res.json({ response: answerText, timestamp: new Date().toISOString() });
 
     } catch (error) {
         console.error('Savor AI Error:', error);
@@ -428,3 +438,4 @@ ANSWER:`;
 });
 
 module.exports = router;
+

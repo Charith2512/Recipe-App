@@ -1954,8 +1954,84 @@ const savorAI = {
         this.closeBtn.onclick = () => this.toggleModal(false);
 
         this.sendBtn.onclick = () => this.sendMessage();
+        
+        // Handle multi-line input
+        this.input.oninput = () => this.autoResizeInput();
         this.input.onkeydown = (e) => {
-            if (e.key === 'Enter') this.sendMessage();
+            // Enter sends message, Shift+Enter adds newline
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
+            }
+        };
+
+        // Make window interactive
+        this.initDraggable();
+        this.initResizable();
+    },
+
+    autoResizeInput() {
+        this.input.style.height = 'auto';
+        const newHeight = Math.min(this.input.scrollHeight, 120);
+        this.input.style.height = newHeight + 'px';
+    },
+
+    initDraggable() {
+        const header = this.modal.querySelector('.chat-header');
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+        header.onmousedown = (e) => {
+            // Only drag on header, not on close button
+            if (e.target.id === 'close-chat-btn') return;
+            
+            e.preventDefault();
+            // get the mouse cursor position at startup:
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = () => {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            };
+            document.onmousemove = (e) => {
+                e.preventDefault();
+                // calculate the new cursor position:
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                // set the element's new position:
+                this.modal.style.top = (this.modal.offsetTop - pos2) + "px";
+                this.modal.style.left = (this.modal.offsetLeft - pos1) + "px";
+                this.modal.style.bottom = "auto";
+                this.modal.style.right = "auto";
+            };
+        };
+    },
+
+    initResizable() {
+        const handle = document.getElementById('chat-resize-handle');
+        let startX, startY, startWidth, startHeight;
+
+        handle.onmousedown = (e) => {
+            e.preventDefault();
+            startX = e.clientX;
+            startY = e.clientY;
+            startWidth = parseInt(document.defaultView.getComputedStyle(this.modal).width, 10);
+            startHeight = parseInt(document.defaultView.getComputedStyle(this.modal).height, 10);
+            
+            document.onmouseup = () => {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            };
+            document.onmousemove = (e) => {
+                const newWidth = startWidth + e.clientX - startX;
+                const newHeight = startHeight + e.clientY - startY;
+                
+                // Constraints are handled by CSS min-width/min-height, 
+                // but setting them here for extra smoothness
+                if (newWidth > 300) this.modal.style.width = newWidth + 'px';
+                if (newHeight > 400) this.modal.style.height = newHeight + 'px';
+            };
         };
     },
 
@@ -1995,6 +2071,7 @@ const savorAI = {
         // 1. UI Update (User)
         this.addMessage(query, 'user');
         this.input.value = '';
+        this.input.style.height = 'auto'; // Reset height
         this.input.disabled = true;
 
         // 2. Loading State
