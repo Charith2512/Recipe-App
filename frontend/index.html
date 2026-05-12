@@ -25,22 +25,22 @@
     <nav>
       <ul>
         <li>
-          <a href="#" id="link-view-recipes" class="active" onclick="switchView('recipes')">Browse Recipes</a>
+          <a href="#" id="link-view-recipes" class="active">Browse Recipes</a>
         </li>
         <li>
-          <a href="#" id="link-view-drinks" onclick="switchView('drinks')">Browse Drinks</a>
+          <a href="#" id="link-view-drinks">Browse Drinks</a>
         </li>
         <li>
-          <a href="#" id="link-view-pantry" onclick="switchView('pantry')">Pantry Chef 🤖</a>
+          <a href="#" id="link-view-pantry">Pantry Chef 🤖</a>
         </li>
         <li>
-          <a href="#" id="link-view-planner" onclick="switchView('planner')">Meal Planner</a>
+          <a href="#" id="link-view-planner">Meal Planner</a>
         </li>
         <li>
-          <a href="#" id="link-view-shopping" onclick="switchView('shopping')">Shopping List</a>
+          <a href="#" id="link-view-shopping">Shopping List</a>
         </li>
         <li>
-          <a href="#" id="link-view-favourites" onclick="switchView('favourites')">Favourites</a>
+          <a href="#" id="link-view-favourites">Favourites</a>
         </li>
       </ul>
     </nav>
@@ -52,7 +52,16 @@
          data-callback="handleCredentialResponse"
          data-auto_prompt="false">
       </div>
-      <div class="g_id_signin" data-type="standard"></div>
+      <div class="google-btn-wrapper">
+        <div class="g_id_signin" 
+             data-type="standard" 
+             data-shape="pill" 
+             data-theme="outline" 
+             data-text="signin_with" 
+             data-size="large" 
+             data-logo_alignment="left">
+        </div>
+      </div>
       
       <!-- Logged in state (hidden by default) -->
       <div id="user-info" class="hidden" style="display: flex; align-items: center; gap: 10px;">
@@ -75,7 +84,7 @@
       </div>
 
       <!-- AI Promo Banner -->
-      <div onclick="switchView('pantry')" style="cursor: pointer; background: linear-gradient(135deg, #e9f5db, #d8f3dc); border: 2px solid var(--primary-color); border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; text-align: center; box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
+      <div id="promo-pantry" style="cursor: pointer; background: linear-gradient(135deg, #e9f5db, #d8f3dc); border: 2px solid var(--primary-color); border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; text-align: center; box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
           <h3 style="color: var(--primary-color); font-size: 1.3rem; margin-bottom: 0.5rem;">✨ Try our new AI Pantry Chef!</h3>
           <p style="color: var(--text-main); font-size: 1rem; margin: 0;">Tell us what ingredients you have, and our AI will create a custom recipe just for you. <strong>Click here to try it!</strong></p>
       </div>
@@ -105,7 +114,7 @@
       </div>
 
       <!-- AI Promo Banner -->
-      <div onclick="switchView('pantry')" style="cursor: pointer; background: linear-gradient(135deg, #e9f5db, #d8f3dc); border: 2px solid var(--primary-color); border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; text-align: center; box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
+      <div id="promo-pantry-drinks" style="cursor: pointer; background: linear-gradient(135deg, #e9f5db, #d8f3dc); border: 2px solid var(--primary-color); border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; text-align: center; box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
           <h3 style="color: var(--primary-color); font-size: 1.3rem; margin-bottom: 0.5rem;">✨ Want an AI custom drink recipe?</h3>
           <p style="color: var(--text-main); font-size: 1rem; margin: 0;">Use our AI Pantry Chef to create a unique cocktail from whatever you have in your kitchen right now! <strong>Click here to start!</strong></p>
       </div>

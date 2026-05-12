@@ -112,6 +112,36 @@ async function checkStoredAuth() {
     }
 }
 
+function renderGoogleButton(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    if (window.google && google.accounts && google.accounts.id) {
+        google.accounts.id.renderButton(
+            container,
+            { theme: "outline", size: "large", shape: "pill", text: "signin_with" }
+        );
+    } else {
+        setTimeout(() => renderGoogleButton(containerId), 200);
+    }
+}
+
+function getAuthPlaceholderHtml(featureName, buttonId) {
+    return `
+        <div class="auth-placeholder">
+            <div class="auth-placeholder-icon">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </div>
+            <h2>Sign In Required</h2>
+            <p>Please sign in with your Google account to access the <strong>${featureName}</strong> and save your progress.</p>
+            
+            <div class="google-btn-wrapper">
+                <div id="${buttonId}"></div>
+            </div>
+        </div>
+    `;
+}
+
 // Utils
 function getStartOfWeek(date) {
     const d = new Date(date);
@@ -309,6 +339,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     setupPantryListeners();
+
+    // Promo Banners
+    document.getElementById('promo-pantry')?.addEventListener('click', () => switchView('pantry'));
+    document.getElementById('promo-pantry-drinks')?.addEventListener('click', () => switchView('pantry'));
 });
 
 // --- Categories Logic (Recipes) ---
@@ -427,7 +461,9 @@ async function loadFavourites() {
     if (!list) return;
     
     if (!state.user) {
-        list.innerHTML = '<div style="grid-column: 1/-1; text-align: center;">Please sign in to view your favourites.</div>';
+        const btnId = 'auth-google-btn-favourites';
+        list.innerHTML = `<div style="grid-column: 1/-1;">${getAuthPlaceholderHtml('Favourites', btnId)}</div>`;
+        renderGoogleButton(btnId);
         return;
     }
 
@@ -467,14 +503,8 @@ function switchView(viewName, addToHistory = true, targetNavOverride = null) {
     // 1. Authentication Guard for Protected Views
     const protectedViews = ['pantry', 'planner', 'shopping', 'favourites'];
     if (protectedViews.includes(viewName) && !state.user) {
-        let featureName = viewName.charAt(0).toUpperCase() + viewName.slice(1);
-        if (viewName === 'pantry') featureName = 'Pantry Chef AI';
-        if (viewName === 'shopping') featureName = 'Shopping List';
-        if (viewName === 'planner') featureName = 'Meal Planner';
-        
-        showToast(`Please sign in to use the ${featureName}.`, 'error');
-        viewName = 'recipes'; // Redirect back to public view
-        targetNavOverride = 'recipes';
+        // We let the specific load functions handle the auth placeholder display
+        // No redirecting to recipes anymore, stay on the view but show placeholder
     }
 
     // Update State
@@ -519,8 +549,12 @@ function switchView(viewName, addToHistory = true, targetNavOverride = null) {
 
 async function loadShoppingList() {
     if (!state.user) {
-        showToast("Please sign in to view your Shopping List.", 'error');
-        switchView('recipes');
+        const listContainer = document.getElementById('shopping-list-container');
+        if (listContainer) {
+            const btnId = 'auth-google-btn-shopping';
+            listContainer.innerHTML = getAuthPlaceholderHtml('Shopping List', btnId);
+            renderGoogleButton(btnId);
+        }
         return;
     }
 
@@ -599,9 +633,27 @@ async function loadShoppingList() {
 
 function loadPantry() {
     if (!state.user) {
-        showToast("Please sign in to use the Pantry Chef.", 'error');
-        switchView('recipes');
+        const historyGrid = document.getElementById('ai-history-grid');
+        const historySection = document.getElementById('ai-history-section');
+        const pantryContent = document.querySelector('#view-pantry > div');
+        
+        if (pantryContent) {
+            // Check if we already added the placeholder
+            if (!document.getElementById('pantry-auth-placeholder')) {
+                const placeholder = document.createElement('div');
+                placeholder.id = 'pantry-auth-placeholder';
+                const btnId = 'auth-google-btn-pantry';
+                placeholder.innerHTML = getAuthPlaceholderHtml('Pantry Chef AI', btnId);
+                pantryContent.parentNode.insertBefore(placeholder, pantryContent);
+                pantryContent.classList.add('hidden');
+                renderGoogleButton(btnId);
+            }
+        }
         return;
+    } else {
+        // Clean up placeholder if logged in
+        document.getElementById('pantry-auth-placeholder')?.remove();
+        document.querySelector('#view-pantry > div')?.classList.remove('hidden');
     }
 
     state.pantryIngredients = [];
@@ -832,7 +884,9 @@ async function loadAIHistory() {
     // Fetch recipes
     try {
         if (!state.user) {
-            list.innerHTML = '<p style="grid-column: 1/-1; text-align: left; color: #888;">Please sign in to view your AI recipes.</p>';
+            const btnId = 'auth-google-btn-history';
+            list.innerHTML = `<div style="grid-column: 1/-1;">${getAuthPlaceholderHtml('AI Recipe History', btnId)}</div>`;
+            renderGoogleButton(btnId);
             filterBar.style.display = 'none';
             if (isHistoryEditMode) toggleHistoryEditMode(false);
             return;
@@ -1494,7 +1548,11 @@ function changeWeek(days) {
 async function loadPlanner() {
     if (!state.user) {
         const grid = document.getElementById('planner-grid');
-        if (grid) grid.innerHTML = '<div style="text-align:center; padding:3rem; grid-column:1/-1;">Please sign in to view your meal plan.</div>';
+        if (grid) {
+            const btnId = 'auth-google-btn-planner';
+            grid.innerHTML = `<div style="grid-column: 1/-1;">${getAuthPlaceholderHtml('Meal Planner', btnId)}</div>`;
+            renderGoogleButton(btnId);
+        }
         return;
     }
 
