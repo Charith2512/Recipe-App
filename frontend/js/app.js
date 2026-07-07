@@ -2197,12 +2197,64 @@ switchView = function (viewName, addToHistory = true, targetNavOverride = null) 
 // No, we need to call setContext() explicitly after load.
 // We will modify openRecipe and openDrink to call savoryAI.setContext() at the end.
 
-// Wake up Render backend immediately on page load to reduce cold start delay
-window.addEventListener('load', () => {
-    if (typeof API_BASE !== 'undefined') {
-        fetch(`${API_BASE}/health`).catch(() => {});
+// Check and monitor server health to show connection status
+async function checkServerHealth() {
+    const statusBadge = document.getElementById('server-status');
+    const statusText = statusBadge ? statusBadge.querySelector('.status-text') : null;
+    const maxRetries = 15; // ~75 seconds total
+    let retries = 0;
+
+    async function doCheck() {
+        if (typeof API_BASE === 'undefined') return;
+        try {
+            const res = await fetch(`${API_BASE}/health`);
+            if (res.ok) {
+                if (statusBadge) {
+                    statusBadge.className = 'server-status connected';
+                    statusBadge.setAttribute('title', 'Backend server is active and connected.');
+                }
+                if (statusText) statusText.textContent = 'Connected';
+                return;
+            }
+        } catch (e) {
+            console.warn('Server health check failed, retrying...', e);
+        }
+
+        retries++;
+        if (retries < maxRetries) {
+            if (statusText) statusText.textContent = `Waking up (${retries})...`;
+            setTimeout(doCheck, 5000); // retry every 5s
+        } else {
+            if (statusBadge) {
+                statusBadge.className = 'server-status offline';
+                statusBadge.setAttribute('title', 'Server offline or taking too long. Click to retry.');
+            }
+            if (statusText) statusText.textContent = 'Offline';
+        }
     }
-});
+
+    if (statusBadge) {
+        statusBadge.className = 'server-status connecting';
+        if (statusText) statusText.textContent = 'Connecting...';
+        
+        // Allow clicking the offline status badge to reconnect manually
+        if (!statusBadge.dataset.listenerAdded) {
+            statusBadge.addEventListener('click', () => {
+                if (statusBadge.classList.contains('offline')) {
+                    retries = 0;
+                    statusBadge.className = 'server-status connecting';
+                    if (statusText) statusText.textContent = 'Reconnecting...';
+                    doCheck();
+                }
+            });
+            statusBadge.dataset.listenerAdded = 'true';
+        }
+    }
+    
+    doCheck();
+}
+
+window.addEventListener('load', checkServerHealth);
 
 
 // --- Scroll to Top Logic ---

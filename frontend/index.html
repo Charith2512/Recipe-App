@@ -21,7 +21,13 @@
 
 <body>
   <header>
-    <div class="logo">Savor</div>
+    <div class="logo-container" style="display: flex; align-items: center; gap: 12px;">
+      <div class="logo">Savor</div>
+      <div id="server-status" class="server-status connecting" title="Waking up server... (can take up to 50 seconds on first load)">
+        <span class="status-dot"></span>
+        <span class="status-text">Waking up...</span>
+      </div>
+    </div>
     <nav>
       <ul>
         <li>

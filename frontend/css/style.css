@@ -1058,4 +1058,99 @@ main {
     padding: 2px;
 }
 
+/* Server Status Badge styling */
+.server-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 0.1px;
+    user-select: none;
+    border: 1px solid transparent;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+/* Connecting State */
+.server-status.connecting {
+    background: rgba(245, 158, 11, 0.1);
+    color: #b45309;
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+.server-status.connecting .status-dot {
+    background-color: #f59e0b;
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+    animation: statusPulseOrange 1.5s infinite;
+}
+
+/* Connected State */
+.server-status.connected {
+    background: rgba(16, 185, 129, 0.12);
+    color: #047857;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.server-status.connected .status-dot {
+    background-color: #10b981;
+    animation: statusPulseGreen 2.5s infinite ease-in-out;
+}
+
+/* Offline State */
+.server-status.offline {
+    background: rgba(239, 68, 68, 0.1);
+    color: #b91c1c;
+    border-color: rgba(239, 68, 68, 0.35);
+    cursor: pointer;
+}
+
+.server-status.offline:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.5);
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.1);
+}
+
+.server-status.offline .status-dot {
+    background-color: #ef4444;
+}
+
+@keyframes statusPulseOrange {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 5px rgba(245, 158, 11, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+    }
+}
+
+@keyframes statusPulseGreen {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+        box-shadow: 0 0 4px rgba(16, 185, 129, 0.4);
+    }
+    50% {
+        transform: scale(1.15);
+        opacity: 0.75;
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    }
+}
+
+
 
